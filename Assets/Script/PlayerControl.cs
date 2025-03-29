@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -53,6 +54,8 @@ public class PlayerControl : MonoBehaviour
     public float O2Timer = 10f;
     public float O2Timing = 0;
     public bool isO2 = true;
+
+    public bool isRecog = false;
 
     public void SetPlayer()
     {
@@ -186,6 +189,36 @@ public class PlayerControl : MonoBehaviour
             Attack();
 
             //SetO2();
+        }
+    }
+
+    public void UseItem(int itemnum)
+    {
+        //Debug.Log("ItemNum : " + itemnum + "사용");
+        //switch(itemnum)
+        //{
+        //    case 0:
+        //        {
+        //            Vector3 pos = FIndChest().postion;
+        //            //tempChest = Instantiate(ChestArrow).
+        //        }
+        //        break;
+        //}
+    }
+
+    public void SetDamage(int damage)
+    {
+        if(!isRecog)
+        {
+            HP -= damage;
+            Debug.Log("체력 감소");
+            if(HP < 0)
+            {
+
+            } else
+            {
+
+            }
         }
     }
 
