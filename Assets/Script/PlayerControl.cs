@@ -205,9 +205,6 @@ public class PlayerControl : MonoBehaviour
     private void Start()
     {
         SetPlayer();
-        gameManager.GameModeChange();
-        Debug.Log("퍼즐 오픈");
-        gameManager.gameCard.gameObject.SetActive(true);
     }
     private void Update()
     {
