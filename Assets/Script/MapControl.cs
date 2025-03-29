@@ -50,19 +50,45 @@ public class MapControl : MonoBehaviour
     void Start()
     {
         CreateMap();
-        GenerateDesertTerrain();
+    }
+
+    private void Update()
+    {
+        LimitPlayerMove();
     }
 
     public void CreateMap()
     {
         gameManager = GameObject.Find("GameManager").GetComponent<GameManager>();
-        //player = GameObject.Find("Player").transform;
+        player = GameObject.Find("Player").transform;
         PrefabChest = Resources.Load<GameObject>("Prefabs/Chest_Closed");
         prefabItems = Resources.LoadAll<GameObject>("Prefabs/Items");
         prefabDoor = Resources.Load<GameObject>("Prefabs/Door");
         sandTexture = GenerateTexture(GameData.baseSandColor, GameData.mixSandColor);
         galssTexture = GenerateTexture(GameData.baseGlassColor, GameData.mixGlassColor);
         MapInfo = Resources.LoadAll<Texture2D>("MapData");
+        GenerateDesertTerrain();
+        if(!GameData.Instance.isGame)
+        {
+            GameData.Instance.statgeNum = 0;
+            GameData.Instance.bagUpgradeNum = 0;
+            GameData.Instance.bagData.Clear();
+            GameData.Instance.chestData.Clear();
+            foreach(GameObject obj in chests)
+            {
+                GameData.Instance.chestData.Add(true);
+                Debug.Log(obj);
+            }
+
+        } else
+        {
+            for(int i = 0; i < GameData.Instance.chestData.Count; i++)
+            {
+                chests[i].SetActive(GameData.Instance.chestData[i]);
+            }
+        }
+        gameManager.SetChest(GameData.Instance.chestData.FindAll(a => a).Count);
+        GameData.Instance.isGame = true;
     }
     Texture2D GenerateTexture(Color baseColor, Color mixColor)
     {
@@ -80,6 +106,22 @@ public class MapControl : MonoBehaviour
         }
         texture.Apply();
         return texture;
+    }
+
+    void LimitPlayerMove()
+    {
+        if(player == null) {
+            return;
+        }
+
+        float minX = 0;
+        float maxX = mapWidth;
+        float minZ = 0;
+        float maxZ = mapHeight;
+
+        Vector3 clampPostion = player.position;
+        clampPostion.x = Mathf.Clamp(clampPostion.x, minX, maxX);
+        clampPostion.z = Mathf.Clamp(clampPostion.z, minZ, maxZ);
     }
     void GenerateDesertTerrain()
     {
@@ -104,7 +146,7 @@ public class MapControl : MonoBehaviour
                 }
                 else if (pixelColor == Color.cyan)
                 {
-                    //GeneratePyramid(new Vector3(j * tileSize, -1f, i * tileSize));
+                    GeneratePyramid(new Vector3(j * tileSize, -1f, i * tileSize));
                 }
                 else if (pixelColor == GameData.ColorNoneGlassBlock)
                 {
@@ -122,10 +164,10 @@ public class MapControl : MonoBehaviour
                     bottomBlock.tag = "Ground";
                     bottomBlock.transform.parent = Map.transform;
 
-                    //GameObject chest = Instantiate(PrefabChest, new Vector3(j * tileSize, -1f, i * tileSize), PrefabChest.transform.rotation);
-                    //chest.transform.position = new Vector3(j * tileSize, -0.5f, i * tileSize);
-                    //chest.tag = "Chest";
-                    //chests.Add(chest);
+                    GameObject chest = Instantiate(PrefabChest, new Vector3(j * tileSize, -1f, i * tileSize), PrefabChest.transform.rotation);
+                    chest.transform.position = new Vector3(j * tileSize, -0.5f, i * tileSize);
+                    chest.tag = "Chest";
+                    chests.Add(chest);
                 }
                 else if (pixelColor == GameData.ColorBlock)
                 {
@@ -135,11 +177,11 @@ public class MapControl : MonoBehaviour
                     bottomBlock.tag = "Ground";
                     bottomBlock.transform.parent = Map.transform;
 
-                    //GameObject Block = Instantiate(PrefabChest, new Vector3(j * tileSize, -1f, i * tileSize), PrefabChest.transform.rotation);
-                    //Block.GetComponent<Renderer>().material.mainTexture = sandTexture;
-                    //Block.transform.position = new Vector3(j * tileSize, -0.5f, i * tileSize);
-                    //Block.transform.parent = Map.transform;
-                    //Block.tag = "Obstacle";
+                    GameObject Block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    Block.GetComponent<Renderer>().material.mainTexture = sandTexture;
+                    Block.transform.position = new Vector3(j * tileSize, 0f, i * tileSize);
+                    Block.tag = "Obstacle";
+                    Block.transform.parent = Map.transform;
                 }
                 else if (pixelColor == GameData.ColorTrap)
                 {
@@ -149,9 +191,9 @@ public class MapControl : MonoBehaviour
                     bottomBlock.tag = "Ground";
                     bottomBlock.transform.parent = Map.transform;
 
-                    //GameObject trap = GenerateTraps();
-                    //trap.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
-                    //trap.transform.parent = Map.transform;
+                    GameObject trap = GenerateTraps();
+                    trap.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
+                    trap.transform.parent = Map.transform;
 
                 }
                 else if (pixelColor == GameData.colorRandom)
@@ -161,11 +203,11 @@ public class MapControl : MonoBehaviour
                     bottomBlock.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
                     bottomBlock.transform.parent = Map.transform;
 
-                    //int randNum = Random.Range(0, prefabItems.Length);
-                    //GameObject item = Instantiate(prefabItems[randNum], new Vector3(j * tileSize, -1f, i * tileSize), prefabItems[randNum].transform.rotation);
-                    //item.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
-                    //item.GetComponent<Item>().SetItem(randNum);
-                    //item.tag = "Item";
+                    int randNum = Random.Range(0, prefabItems.Length);
+                    GameObject item = Instantiate(prefabItems[randNum], new Vector3(j * tileSize, -1f, i * tileSize), prefabItems[randNum].transform.rotation);
+                    item.transform.position = new Vector3(j * tileSize, 0f, i * tileSize);
+                    item.GetComponent<Item>().SetItem(randNum);
+                    item.tag = "Item";
 
                 }
                 else if (pixelColor == GameData.colorRobby)
@@ -174,9 +216,70 @@ public class MapControl : MonoBehaviour
                     bottomBlock.GetComponent<Renderer>().material.mainTexture = sandTexture;
                     bottomBlock.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
                     bottomBlock.transform.parent = Map.transform;
+
+                    GameObject robby = Instantiate(prefabDoor, new Vector3(j * tileSize, 0f, i * tileSize), prefabDoor.transform.rotation);
+                    robby.transform.position = new Vector3(j * tileSize + 0.5f, 0.25f, i * tileSize);
+                    robby.tag = "Start";
+                } else if(pixelColor == GameData.colorEND)
+                {
+                    GameObject bottomBlock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    bottomBlock.GetComponent<Renderer>().material.mainTexture = sandTexture;
+                    bottomBlock.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
+                    bottomBlock.transform.parent = Map.transform;
+
+                    GameObject robby = Instantiate(prefabDoor, new Vector3(j * tileSize, 0f, i * tileSize), prefabDoor.transform.rotation);
+                    robby.transform.position = new Vector3(j * tileSize + 0.5f, 0.25f, i * tileSize);
+                    robby.tag = "End";
+                } else if(pixelColor == GameData.ColorPatrolEnemyTop)
+                {
+                    GameObject bottomBlock = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    bottomBlock.GetComponent<Renderer>().material.mainTexture = sandTexture;
+                    bottomBlock.transform.position = new Vector3(j * tileSize, -1f, i * tileSize);
+                    bottomBlock.transform.parent = Map.transform;
+
+                    gameManager.monsterControl.CreatePatrolMonsters(new Vector3(j * tileSize, 0f, i * tileSize));
                 }
             }
 
         }
+    }
+
+    GameObject GenerateTraps()
+    {
+        GameObject trap = new GameObject("trap");
+        for(int i = 0; i < 5; i++)
+        {
+            GameObject thorn = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            thorn.transform.localScale = new Vector3(0.2f, 1.5f, 0.2f);
+            thorn.transform.position = new Vector3(Random.Range(-0.4f, 0.4f), 0f, Random.Range(-0.4f, 0.4f));
+            thorn.transform.localPosition = new Vector3(0.1f, 0.4f, 0.1f);
+            thorn.GetComponent<Renderer>().material.color = Color.white;
+            thorn.transform.parent = trap.transform;
+        }
+        traps.Add(trap);
+        return trap;
+    }
+
+    void GeneratePyramid(Vector3 pos)
+    {
+        GameObject pyramid = new GameObject("Pyramid");
+        int baseSize = 8;
+        float blockSize = 1f;
+
+        for(int y = 0; y < baseSize; y++)
+        {
+            for (int x = 0; x < baseSize - y; x++)
+            {
+                for(int z = 0; z < baseSize - y; z++)
+                {
+                    GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    block.transform.position = new Vector3(x - (baseSize - y) / 2f, y * blockSize, z - (blockSize - y) / 2f);
+                    block.transform.localScale = new Vector3(blockSize, blockSize, blockSize);
+                    block.GetComponent<Renderer>().material.mainTexture = sandTexture;
+                    block.transform.parent = pyramid.transform;
+                }
+            }
+        }
+        pyramid.transform.position = pos;
     }
 }

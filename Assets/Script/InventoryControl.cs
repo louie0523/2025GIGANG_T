@@ -59,7 +59,7 @@ public class InventoryControl : MonoBehaviour
 
     public void UseItem(int itemNum)
     {
-        //playerControl.UseItme(itemNum);
+        playerControl.UseItem(itemNum);
     }
 
     public bool GetInventoryEmpty(Item item)
@@ -105,7 +105,7 @@ public class InventoryControl : MonoBehaviour
                 }
             }
         }
-        //gameManager.delayText.SetText("아이템이 가득찼습니다.");
+        gameManager.delayText.SetText("아이템이 가득찼습니다.");
         return false;
     }
 
@@ -155,7 +155,7 @@ public class InventoryControl : MonoBehaviour
                 SetInventory();
             } else
             {
-                //gameManager.delayText.SetText("아이템이 읎습니다.");
+                gameManager.delayText.SetText("아이템이 읎습니다.");
             }
         }
     }

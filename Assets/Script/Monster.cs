@@ -120,7 +120,6 @@ public class Monster : MonoBehaviour
         {
             foreach(RaycastHit hit in hits)
             {
-                Debug.Log(hit.transform.name);
                 if (hit.transform.CompareTag("Obstacle") || hit.transform.CompareTag("Chest"))
                 {
                     return false;

@@ -18,11 +18,14 @@ public class MonsterControl : MonoBehaviour
 
     public void CreatePatrolMonsters(Vector3 pos)
     {
-        Instantiate(patroMonstor, pos, patroMonstor.transform.rotation);
+        GameObject Pm = Instantiate(patroMonstor, pos, patroMonstor.transform.rotation);
+        Pm.AddComponent<Monster>();
+
     }
 
     public void CreateAIMonsters(Vector3 pos)
     {
-        Instantiate(AIMonster, pos, AIMonster.transform.rotation);
+        GameObject Am = Instantiate(AIMonster, pos, AIMonster.transform.rotation);
+        Am.AddComponent<Monster>().isPatrol = false;
     }
 }

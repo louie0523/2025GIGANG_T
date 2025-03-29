@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PlayerControl : MonoBehaviour
 {
@@ -49,13 +50,16 @@ public class PlayerControl : MonoBehaviour
 
     public GameManager gameManager;
 
-    //public InventoryControl inventoryControl;
+    public InventoryControl inventoryControl;
 
     public float O2Timer = 10f;
     public float O2Timing = 0;
     public bool isO2 = true;
 
     public bool isRecog = false;
+    public float recogTimimg = 5.0f;
+    public float recogTimer = 0;
+
 
     public void SetPlayer()
     {
@@ -71,7 +75,7 @@ public class PlayerControl : MonoBehaviour
 
         characterController = this.AddComponent<CharacterController>();
 
-        //inventoryControl = this.AddComponent<InventoryControl>();
+        inventoryControl = this.AddComponent<InventoryControl>();
 
         CreateKnife();
     }
@@ -147,23 +151,45 @@ public class PlayerControl : MonoBehaviour
         Vector3 forward = this.transform.forward;
         Vector3 rayOrigin = this.transform.position;
 
-        if(Physics.BoxCast(rayOrigin, new Vector3(0.5f, 1.0f, 0.5f), forward, out hit, Quaternion.identity, 1.0f)) {
+        if(Physics.BoxCast(rayOrigin, new Vector3(0.5f, 1.0f, 0.5f), forward, out hit, Quaternion.identity, 2.0f)) {
             Debug.Log("Detected Object : " +  hit.collider.gameObject.name);
             if (hit.collider.gameObject.CompareTag("Chest"))
             {
                 int num = gameManager.mapControl.chests.FindIndex(a => a == hit.collider.gameObject);
-                if(num > 1)
+                Debug.Log(num);
+                if(num > -1)
                 {
+                    Debug.Log("상자 비활성화");
                     GameData.Instance.chestData[num] = false;
                     GameData.Instance.cost += GameData.chestCost[GameData.Instance.statgeNum];
                     hit.collider.gameObject.SetActive(false);
                 }
-                //gameManager.SetChest(GameData.Instance.chestData.FindAll(a => a).Count);
+                gameManager.SetChest(GameData.Instance.chestData.FindAll(a => a).Count);
             } else if(hit.collider.gameObject.CompareTag("Obstacle"))
             {
                 hit.collider.gameObject.SetActive(false);   
+            } else if(hit.collider.gameObject.CompareTag("Start"))
+            {
+                SceneManager.LoadScene("Robby");
+                gameManager.GameModeChange();
             }
-        }
+            else if (hit.collider.gameObject.CompareTag("End"))
+            {
+                if(GameData.Instance.chestData.FindAll(a => a).Count <= 0)
+                {
+                    gameManager.GameModeChange();
+                    Debug.Log("퍼즐 오픈");
+                    gameManager.gameCard.gameObject.SetActive(true);
+                } else
+                {
+                    gameManager.delayText.SetText("보물을 다 찾아야 이동가능합니디");
+                }
+            } else if(hit.collider.gameObject.CompareTag("Item"))
+            {
+                //Item its = hit.collider.gameObject.GetComponent<Item>();
+                //inventoryControl.GetInventoryEmpty(its);
+            }
+        }   
     }
 
     void Attack()
@@ -179,6 +205,9 @@ public class PlayerControl : MonoBehaviour
     private void Start()
     {
         SetPlayer();
+        gameManager.GameModeChange();
+        Debug.Log("퍼즐 오픈");
+        gameManager.gameCard.gameObject.SetActive(true);
     }
     private void Update()
     {
@@ -187,23 +216,134 @@ public class PlayerControl : MonoBehaviour
             Move();
             LookAround();
             Attack();
-
-            //SetO2();
+            SetO2();
         }
+
+        if(isSpeedUp)
+        {
+            if(speedTiming > speedTimer)
+            {
+                isSpeedUp = false;
+                moveSpeed = originalSpeed;
+                speedTiming = 0;
+            } else
+            {
+                speedTiming += Time.deltaTime;
+            }
+        }
+        if (isDbSpeedUp)
+        {
+            if (dbSpeedTiming > dbSpeedTimer)
+            {
+                isDbSpeedUp = false;
+                moveSpeed = originalSpeed;
+                dbSpeedTiming = 0;
+            }
+            else
+            {
+                dbSpeedTiming += Time.deltaTime;
+            }
+        }
+        if(isRecog)
+        {
+            if(recogTimimg > recogTimer)
+            {
+               isRecog = false;
+                recogTimimg = 0;
+            } else
+            {
+                recogTimimg += Time.deltaTime;
+            }
+        }
+        gameManager.totalTime.text = GameData.Instance.gameTime.ToString("#");
+        GameData.Instance.gameTime += Time.deltaTime;
     }
 
     public void UseItem(int itemnum)
     {
-        //Debug.Log("ItemNum : " + itemnum + "사용");
-        //switch(itemnum)
-        //{
-        //    case 0:
-        //        {
-        //            Vector3 pos = FIndChest().postion;
-        //            //tempChest = Instantiate(ChestArrow).
-        //        }
-        //        break;
-        //}
+        Debug.Log("ItemNum : " + itemnum + "사용");
+        switch (itemnum)
+        {
+            case 0:
+                {
+                    Vector3 pos = FindChest().position;
+                    tempChest = Instantiate(ChestArrow, pos, ChestArrow.transform.rotation);
+                }
+                break;
+            case 1:
+                {
+                    HP = GameData.MaxHp;
+                    gameManager.HPBar.value = (float)HP / (float)GameData.MaxHp;
+                }
+                break;
+            case 2:
+                {
+                    O2 = GameData.MaxO2[GameData.Instance.bagO2];
+                    gameManager.O2Bar.value = (float)O2 / (float)GameData.MaxO2[GameData.Instance.bagO2];
+                }
+                break;
+            case 3:
+                {
+                    isRecog = true;
+                    recogTimimg = 0;
+                }
+                break;
+            case 4:
+                {
+                    isDbSpeedUp = true;
+                    moveSpeed = originalSpeed * 1.4f;
+                    speedTiming = 0;
+                }
+                break ;
+            case 5:
+                {
+                    isSpeedUp = true;
+                    moveSpeed = originalSpeed * 1.2f;
+                    speedTiming = 0;
+                }
+                break;
+        }
+    }
+
+    public Transform FindChest()
+    {
+        float distance = 10000;
+        Transform returnTr = null;
+        for(int i = 0; i < gameManager.mapControl.chests.Count; i++)
+        {
+            if(gameManager.mapControl.chests[i].activeInHierarchy)
+            {
+                float tempDistance = Vector3.Distance(this.transform.position, gameManager.mapControl.chests[i].transform.position);
+                if(distance > tempDistance)
+                {
+                    distance = tempDistance;
+                    returnTr = gameManager.mapControl.chests[i].transform;
+                }
+            }
+        }
+        return returnTr;
+    }
+
+    public void SetO2()
+    {
+        if(isO2) { 
+            if(O2Timing > O2Timer)
+            {
+                O2Timing = 0;
+                O2 -= 1;
+                if(O2 < 0)
+                {
+                    gameManager.O2Bar.value = 0;
+                    gameManager.SetGameClear(false);
+                } else
+                {
+                    gameManager.O2Bar.value = (float)O2 / (float)GameData.MaxO2[GameData.Instance.bagO2];
+                }
+            } else
+            {
+                O2Timing += Time.deltaTime;
+            }
+        }
     }
 
     public void SetDamage(int damage)
@@ -214,11 +354,12 @@ public class PlayerControl : MonoBehaviour
             Debug.Log("체력 감소");
             if(HP < 0)
             {
-
+                
             } else
             {
 
             }
+            gameManager.HPBar.value = (float)HP / (float)GameData.MaxHp;
         }
     }
 
